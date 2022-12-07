@@ -7,7 +7,7 @@ from trajectoryGenerator import TrajectoryGenerator
 class DataGenerator:
     def __init__(self, traj_gen, mess):
         self.traj_gen = traj_gen  # сгенерированная траектория
-        self.mess = mess  # мера беспорядка (пусть будет СКО для нормально распределённого шума)
+        self.mess = mess  # мера беспорядка, пусть будет 3 x СКО (правило трёх сигм) для нормально распределённого шума
         self.messed_pts_x, self.messed_pts_y = self.mess_up()
 
     # Зашумление точек и помещение координат всех отрезков в единые списки (по осям х и у)
@@ -19,8 +19,8 @@ class DataGenerator:
             for pt in range(pts_num):
                 x_offset = 0
                 y_offset = 0
-                course_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg)
-                side_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg)
+                course_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg/3)
+                side_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg/3)
                 x_offset += course_offset * cos(seg.alpha) - side_offset * sin(seg.alpha)
                 y_offset += course_offset * sin(seg.alpha) + side_offset * cos(seg.alpha)
                 messed_pts_x.append(pts_x[pt] + x_offset)
@@ -28,19 +28,11 @@ class DataGenerator:
         return messed_pts_x, messed_pts_y
 
     # Визуализация зашумлённых данных
-    def data_plot(self):
+    def plot_data(self):
         fig, ax = plt.subplots()
         ax.plot(self.messed_pts_x, self.messed_pts_y, '.', markersize=5, color='0.6')
-        ax.axis('scaled')
+        # ax.axis('scaled')
         fig.show()
+        return fig, ax
 
-
-ln_seg = 0.1
-mess = 0.2
-
-tg = TrajectoryGenerator(ln_seg)
-dg = DataGenerator(tg, mess)
-dg.data_plot()
-tg.plot_traj()
-plt.show()
 
