@@ -17,10 +17,10 @@ class Line:
         if x1 == x2:
             self.has_general = False  # флаг о возможности полной общей формы уравнения
         else:
-            self.k = (y2 - y1)/(x2 - x1)
             self.has_general = True
+            self.k = (y2 - y1)/(x2 - x1)
 
-        self.b = y1 - x1
+        self.b = y1 - ((y2 - y1)/(x2 - x1)) * x1
         # Параметры для общей формы Ax + By + C = 0
         if self.has_general:
             self.A = self.k
@@ -34,7 +34,7 @@ class Line:
         # угол наклона [рад]
         self.alpha = atan2(y2-y1, x2-x1)
 
-    # Метод расчёта расстояния от точки до прямой
+    # Метод расчёта расстояния от точки до прямой (как раз для этого и нужна общая форма уравнения прямой)
     def pt_dist(self, pt):
         xp, yp = pt
         if self.has_general:
@@ -65,6 +65,3 @@ class Line:
         pts_y.append(self.y2)
 
         return pts_x, pts_y, pts_num + 1  # плюс закреплённая конечная точка
-
-
-
