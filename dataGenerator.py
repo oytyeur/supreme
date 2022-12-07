@@ -1,35 +1,46 @@
 import matplotlib.pyplot as plt
 from math import sqrt, sin, cos
 from random import normalvariate
-from line import Line
+from trajectoryGenerator import TrajectoryGenerator
 
 
-pt1 = (-1, 1)
-pt2 = (1, 0)
-line = Line(pt1, pt2)
-pts_x, pts_y, pts_num = line.get_dotty()
+class DataGenerator:
+    def __init__(self, traj_gen, mess):
+        self.traj_gen = traj_gen  # сгенерированная траектория
+        self.mess = mess  # мера беспорядка (пусть будет СКО для нормально распределённого шума)
+        self.messed_pts_x, self.messed_pts_y = self.mess_up()
 
-mess = 0.25  # мера разброса? пусть будет СКО (для нормально распределённого шума)
-messed_pts_x = []
-messed_pts_y = []
+    # Зашумление точек и помещение координат всех отрезков в единые списки (по осям х и у)
+    def mess_up(self):
+        messed_pts_x = []
+        messed_pts_y = []
+        for seg in self.traj_gen.segments:
+            pts_x, pts_y, pts_num = seg.get_dotty(self.traj_gen.ln_seg)
+            for pt in range(pts_num):
+                x_offset = 0
+                y_offset = 0
+                course_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg)
+                side_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg)
+                x_offset += course_offset * cos(seg.alpha) - side_offset * sin(seg.alpha)
+                y_offset += course_offset * sin(seg.alpha) + side_offset * cos(seg.alpha)
+                messed_pts_x.append(pts_x[pt] + x_offset)
+                messed_pts_y.append(pts_y[pt] + y_offset)
+        return messed_pts_x, messed_pts_y
 
-for pt in range(pts_num):
-    x_offset = 0
-    y_offset = 0
-    course_offset = normalvariate(0.0, mess*Line.ln_seg)
-    side_offset = normalvariate(0.0, mess*Line.ln_seg)
-    x_offset += course_offset * cos(line.alpha) - side_offset * sin(line.alpha)
-    y_offset += course_offset * sin(line.alpha) + side_offset * cos(line.alpha)
-    messed_pts_x.append(pts_x[pt] + x_offset)
-    messed_pts_y.append(pts_y[pt] + y_offset)
+    # Визуализация зашумлённых данных
+    def data_plot(self):
+        fig, ax = plt.subplots()
+        ax.plot(self.messed_pts_x, self.messed_pts_y, '.', markersize=5, color='0.6')
+        ax.axis('scaled')
+        fig.show()
 
-# print(line.k, line.b, line.alpha)
-print(line.length, pts_num)
 
-plt.plot(pts_x, pts_y)  # отображение прямой
-plt.plot(pts_x, pts_y, '.', color='0')  # отображение опорных точек (истинных)
-plt.plot(messed_pts_x, messed_pts_y, '.', color='0.6')  # отображение смещённых точек (зашумлённых)
-plt.plot(line.x1, line.x2, 'r.')
+ln_seg = 0.1
+mess = 0.2
+
+tg = TrajectoryGenerator(ln_seg)
+dg = DataGenerator(tg, mess)
+dg.data_plot()
+tg.plot_traj()
 plt.show()
-
 
