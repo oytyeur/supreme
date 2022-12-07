@@ -5,7 +5,9 @@ from line import Line
 
 
 class TrajectoryGenerator:
-    def __init__(self):
+    def __init__(self, ln_seg):
+        # Промежуток между опорными точками вдоль отрезка (периодичность локализации)
+        self.ln_seg = ln_seg
         # Координаты стартовой точки
         self.start_x = None
         self.start_y = None
@@ -25,7 +27,7 @@ class TrajectoryGenerator:
     # Метод для продолжения ломаной траектории отрезком, следующим из предыдущей конечной точки
     def prolong_traj(self, start_pt):
         st_x, st_y = start_pt  # координаты начальной точки данного отрезка (конечной - предыдущего)
-        length = uniform(0.25, 1.5)
+        length = uniform(0.5, 1.5)
         if not self.segments:  # если пустой список отрезков траектории, в любую сторону направляем первый
             angle = uniform(-pi, pi)
             end_x = st_x + length * cos(angle)
@@ -34,31 +36,25 @@ class TrajectoryGenerator:
             angle = uniform(-pi/2.0, pi/2.0)
             end_x = st_x + length * cos(self.segments[-1].alpha + angle)
             end_y = st_y + length * sin(self.segments[-1].alpha + angle)
-            print(self.segments[-1].alpha)
-        print(angle)
-        print()
+
         self.segments.append(Line(start_pt, (end_x, end_y)))  # добавляем новый отрезок
 
     # Построение ломаной траектории путём последовательного присоединения отрезков
     def create_traj(self):
         start_pt = (self.start_x, self.start_y)
-        for seg in range(self.seg_num):
+        for i in range(self.seg_num):
             self.prolong_traj(start_pt)
             start_pt = (self.segments[-1].x2, self.segments[-1].y2)
 
-
-tg = TrajectoryGenerator()
-
-# print(tg.seg_num, tg.segments)
-# print(tg.start_x, tg.start_y)
-
-#################### ЗАПИХНУТЬ РИСОВАНИЕ В ОТДЕЛЬНУЮ ФУНКЦИЮ ##############
-for seg in tg.segments:
-    pts_x, pts_y, _ = seg.get_dotty()
-    plt.plot(pts_x, pts_y)  # отображение прямой
-    plt.plot(pts_x, pts_y, '.', color='0')  # отображение опорных точек (истинных)
-
-plt.plot(tg.start_x, tg.start_y, 'r.')
-plt.grid()
-plt.show()
+    # Визуализация траектории: линия, стартовая и опорные точки
+    def plot_traj(self):
+        fig, ax = plt.subplots()
+        for seg in self.segments:
+            pts_x, pts_y, _ = seg.get_dotty(self.ln_seg)
+            ax.plot(pts_x, pts_y)  # отображение прямой
+            ax.plot(pts_x, pts_y, '.', markersize=3, color='0.2')  # отображение опорных точек (истинных)
+        ax.plot(self.start_x, self.start_y, 'r.')
+        ax.grid()
+        ax.axis('scaled')
+        fig.show()
 
