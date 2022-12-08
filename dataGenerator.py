@@ -26,6 +26,7 @@ class DataGenerator:
                 y_offset += course_offset * sin(seg.alpha) + side_offset * cos(seg.alpha)
                 messed_pts_x.append(pts_x[pt] + x_offset)
                 messed_pts_y.append(pts_y[pt] + y_offset)
+
         return messed_pts_x, messed_pts_y
 
     # Визуализация зашумлённых данных

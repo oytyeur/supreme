@@ -17,16 +17,9 @@ class StraightLineEstimatorLSM:
             loss_func_value += dist ** 2
         return loss_func_value
 
-    def __init__(self, data):
-        self.data_x, self.data_y = data
-
-    # # Оценка концов отрезка (среза данных для построения текущего отрезка),
-    # # чтобы использовать только потенциально принадлежащие текущему отрезку точки
-    # def estimate_edges(self, tolerance):
-    #     return segment_data
-
     # Вычисление вспомогательных сумм - требуются в вычислениях
-    def calc_sums(self, segment_data):
+    @staticmethod
+    def calc_sums(segment_data):
         data_x, data_y = segment_data
         pts_num = len(data_x)
         x_sum = 0  # сумма всех х координат
@@ -43,23 +36,23 @@ class StraightLineEstimatorLSM:
         return x_sum, y_sum, xy_sum, x_sq_sum, y_sq_sum
 
     # Вычисление аргументов (A, C) для минимума функции потерь
-    def calc_loss_func_min_args(self, segment_data):
+    @staticmethod
+    def calc_loss_func_min_args(segment_data):
         data_x, data_y = segment_data
         pts_num = len(data_x)
-        x_sum, y_sum, xy_sum, x_sq_sum, y_sq_sum = self.calc_sums(segment_data)
+        x_sum, y_sum, xy_sum, x_sq_sum, y_sq_sum = StraightLineEstimatorLSM.calc_sums(segment_data)
         # Вычисление A для минимумов функции потерь
         phi = xy_sum - x_sum * y_sum / pts_num
         theta = (x_sq_sum - y_sq_sum) / phi + (y_sum ** 2 - x_sum ** 2) / (pts_num * phi)
         D = theta ** 2 + 4  # дискриминант
-        A1 = (-theta + sqrt(D))/2
-        A2 = (-theta - sqrt(D))/2
+        A1 = (-theta + sqrt(D)) / 2
+        A2 = (-theta - sqrt(D)) / 2
         # Вычисление С для минимумов функции потерь
         C1 = (y_sum - x_sum * A1) / pts_num
         C2 = (y_sum - x_sum * A2) / pts_num
         # Подстановка в функцию потерь, выявление лучшего
         lf1 = StraightLineEstimatorLSM.calc_loss_func(segment_data, A1, C1)
         lf2 = StraightLineEstimatorLSM.calc_loss_func(segment_data, A2, C2)
-        print(lf1, lf2)
         # Выбор наименьшего значения функции потерь, возврат соответствующих ему параметров А и С
         if lf1 < lf2:
             return A1, C1
@@ -67,22 +60,32 @@ class StraightLineEstimatorLSM:
             return A2, C2
 
     # Визуализация оценки траектории поверх данных: красная точка - начало, синяя - конец
-    def plot_est_line(self, pt1, pt2, fig, ax):
+    @staticmethod
+    def plot_est_line(pt1, pt2, fig, ax):
         ax.plot([pt1[0], pt2[0]], [pt1[1], pt2[1]])
         ax.plot(pt1[0], pt1[1], 'r.')
         ax.plot(pt2[0], pt2[1], 'b.')
         fig.show()
 
+    def __init__(self, data):
+        self.data_x, self.data_y = data
+
+    # Оценка концов отрезка (среза данных для построения текущего отрезка),
+    # чтобы использовать только потенциально принадлежащие текущему отрезку точки
+    def estimate_edges(self, tolerance):
+        segment_data = None
+        return segment_data
+
 
 ln_seg = 0.1
-mess = 1
+mess = 0.25
 
 tg = TrajectoryGenerator(ln_seg)
 dg = DataGenerator(tg, mess)
 seg_data = dg.messed_pts_x, dg.messed_pts_y
 lsm = StraightLineEstimatorLSM(seg_data)
 
-est_A, est_C = lsm.calc_loss_func_min_args(seg_data)
+est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_min_args(seg_data)
 est_k, est_b = Line.get_k_form(est_A, est_C)
 
 st = (seg_data[0][0], est_k * seg_data[0][0] + est_b)
@@ -100,10 +103,9 @@ idl_b = tg.segments[0].b
 print(idl_k, idl_b)
 print(est_k, est_b)
 
-# print(lsm.calc_sums())
-#
+
 t_fig, t_ax = tg.plot_traj()
 d_fig, d_ax = dg.plot_data()
-lsm.plot_est_line(st, end, d_fig, d_ax)
-lsm.plot_est_line(st, end, t_fig, t_ax)
+StraightLineEstimatorLSM.plot_est_line(st, end, d_fig, d_ax)
+StraightLineEstimatorLSM.plot_est_line(st, end, t_fig, t_ax)
 plt.show()

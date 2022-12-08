@@ -19,6 +19,10 @@ class Line:
         b = -C/B
         return k, b
 
+    # # Статический метод нахождения координат точки пересечения двух прямых
+    # @staticmethod
+    # def find_interection(A1, C1, A2, C2):
+
     # Конструктор класса - объявление прямой по 2 точкам
     def __init__(self, pt1, pt2):
         x1, y1 = pt1
