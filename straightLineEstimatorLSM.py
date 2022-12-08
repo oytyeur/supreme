@@ -19,33 +19,11 @@ class StraightLineEstimatorLSM:
 
     def __init__(self, data):
         self.data_x, self.data_y = data
-        # self.pts_num = len(self.data_x)
-        # self.start_pt, self.end_pt, self.est_line = self.get_init_estimation()
-        # self.est_line = None
-        # self.get_init_estimation()
-
-    # Первичная оценка прямой: берётся первая и последняя точки данных, по ним строится прямая
-    # def get_init_estimation(self, segment_data):
-    #     data_x, data_y = segment_data
-    #     start_pt = (data_x[0], data_y[0])  # начальная точка
-    #     end_pt = (data_x[-1], data_y[-1])  # конечная точка
-    #     # self.est_line = Line(start_pt, end_pt)  # отрезок (включает параметры прямой, которые и будем оценивать)
-    #     return start_pt, end_pt
 
     # # Оценка концов отрезка (среза данных для построения текущего отрезка),
     # # чтобы использовать только потенциально принадлежащие текущему отрезку точки
     # def estimate_edges(self, tolerance):
-    #     return seg_data
-
-    # # Получение текущего значения функции потерь (сумма квадратов расстояний от точек данных до текущей оценки прямой)
-    # def calc_loss_func(self, data, A, C):
-    #     data_x, data_y = data
-    #     loss_func_value = 0
-    #     for xp, yp in zip(data_x, data_y):
-    #         pt = xp, yp
-    #         dist = Line.calc_pt_dist_gen(pt, A, C)
-    #         loss_func_value += dist ** 2
-    #     return loss_func_value
+    #     return segment_data
 
     # Вычисление вспомогательных сумм - требуются в вычислениях
     def calc_sums(self, segment_data):
@@ -82,14 +60,11 @@ class StraightLineEstimatorLSM:
         lf1 = StraightLineEstimatorLSM.calc_loss_func(segment_data, A1, C1)
         lf2 = StraightLineEstimatorLSM.calc_loss_func(segment_data, A2, C2)
         print(lf1, lf2)
+        # Выбор наименьшего значения функции потерь, возврат соответствующих ему параметров А и С
         if lf1 < lf2:
             return A1, C1
         else:
             return A2, C2
-
-    # Непосредственно оценка
-    # def estimate_line(self):
-    #     x_sum, y_sum, xy_sum, x_sq_sum, y_sq_sum = self.calc_sums()
 
     # Визуализация оценки траектории поверх данных: красная точка - начало, синяя - конец
     def plot_est_line(self, pt1, pt2, fig, ax):
@@ -112,7 +87,6 @@ est_k, est_b = Line.get_k_form(est_A, est_C)
 
 st = (seg_data[0][0], est_k * seg_data[0][0] + est_b)
 end = (seg_data[0][-1], est_k * seg_data[0][-1] + est_b)
-
 
 # start_pt, end_pt = lsm.get_init_estimation()
 # ln = Line(start_pt, end_pt)
