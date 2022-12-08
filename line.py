@@ -3,6 +3,22 @@ from math import inf, sqrt, atan2, sin, cos
 
 
 class Line:
+    # Статический метод для получения расстояния от заданной точки до прямой, заданной в общей форме (В = -1)
+    @staticmethod
+    def calc_pt_dist_gen(pt, A, C):
+        xp, yp = pt  # координаты заданной точки
+        B = -1  # заведомо известен в общем виде
+        distance = abs(xp * A + yp * B + C) / sqrt(A ** 2 + B ** 2)  # расстояние до прямой Ax + By + C = 0
+        return distance
+
+    # Статический метод для получений k-формы (y = kx + b) из общей (Ax + By + C = 0)
+    @staticmethod
+    def get_k_form(A, C):
+        B = -1
+        k = -A/B
+        b = -C/B
+        return k, b
+
     # Конструктор класса - объявление прямой по 2 точкам
     def __init__(self, pt1, pt2):
         x1, y1 = pt1
@@ -38,7 +54,7 @@ class Line:
         self.alpha = atan2(y2-y1, x2-x1)
 
     # Метод расчёта расстояния от точки до прямой (как раз для этого и нужна общая форма уравнения прямой)
-    def pt_dist(self, pt):
+    def calc_pt_dist(self, pt):
         xp, yp = pt
         # if self.is_x_dependent:
         #     distance = abs(xp*self.A + yp*self.B + self.C)/sqrt(self.A ** 2 + self.B ** 2)
