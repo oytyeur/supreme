@@ -15,12 +15,13 @@ class DataGenerator:
         messed_pts_x = []
         messed_pts_y = []
         for seg in self.traj_gen.segments:
-            pts_x, pts_y, pts_num = seg.get_dotty(self.traj_gen.ln_seg)
+            pts_x, pts_y, pts_num = seg.get_dotty(self.traj_gen.ln_seg)  # разбиений отрезка (дискретизация)
             for pt in range(pts_num):
-                x_offset = 0
-                y_offset = 0
-                course_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg/3)
-                side_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg/3)
+                x_offset = 0  # смещение по оси х
+                y_offset = 0  # смещение по оси у
+                course_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg/3)  # смещение по курсу
+                side_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg/3)  # смещение по борту
+                # Переход от системы координат объекта, к системе координат мира
                 x_offset += course_offset * cos(seg.alpha) - side_offset * sin(seg.alpha)
                 y_offset += course_offset * sin(seg.alpha) + side_offset * cos(seg.alpha)
                 messed_pts_x.append(pts_x[pt] + x_offset)
