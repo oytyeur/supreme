@@ -69,27 +69,80 @@ class StraightLineEstimatorLSM:
 
     def __init__(self, data):
         self.data_x, self.data_y = data
+        self.last_end_idx = 0  # последний найденный конец отрезка
 
     # Оценка концов отрезка (среза данных для построения текущего отрезка),
-    # чтобы использовать только потенциально принадлежащие текущему отрезку точки
-    def estimate_edges(self, tolerance):
-        segment_data = None
-        return segment_data
+    # чтобы использовать для оценки только потенциально принадлежащие текущему отрезку точки
+    def estimate_segment_edges(self, tolerance):
+        # Срезы непроверенных данных
+        rest_data_x = self.data_x[self.last_end_idx:]
+        rest_data_y = self.data_y[self.last_end_idx:]
+        # Объявление выходных наборов координат
+        segment_data_x = []
+        segment_data_y = []
+        rest_pts_num = len(rest_data_x)  # число оставшихся точек
+        # Если точек больше двух, строим прямую, оцениваем расстояние до третьей, сравниваем с tolerance
+        if rest_pts_num > 2:
+            segment_data_x.extend(rest_data_x[:2])  # первая пара принимается принадщлежной отрезку (чтобы больше одной)
+            segment_data_y.extend(rest_data_y[:2])
+            for i in range(rest_pts_num - 2):
+                print(i)
+                # По двум соседним точкам строим прямую
+                line = Line((rest_data_x[i], rest_data_y[i]), (rest_data_x[i+1], rest_data_y[i+1]))
+                # Определяем расстояние до этой прямой от следующей после пары точки
+                dist = Line.calc_pt_dist_gen((rest_data_x[i+2], rest_data_y[i+2]), line.A, line.C)
+                if dist <= tolerance:  # если меньше порога, относим к текущему отрезку
+                    segment_data_x.append(rest_data_x[i+2])
+                    segment_data_y.append(rest_data_y[i+2])
+                    print("accepted", self.last_end_idx)
+                    if i == rest_pts_num - 3:
+                        self.last_end_idx += rest_pts_num
+                else:  # иначе не относим определяем найденный конец отрезка, заканчиваем поиск
+                    self.last_end_idx += i + 1
+                    print("denied", self.last_end_idx)
+                    break
+
+        # Если точек меньше трёх, то весть остаток принимается отрезком
+        else:
+            segment_data_x.extend(rest_data_x)
+            segment_data_y.extend(rest_data_y)
+            self.last_end_idx += rest_pts_num
+
+        return segment_data_x, segment_data_y
 
 
 ln_seg = 0.1
 mess = 0.25
+tol = 0.05
 
 tg = TrajectoryGenerator(ln_seg)
 dg = DataGenerator(tg, mess)
-seg_data = dg.messed_pts_x, dg.messed_pts_y
-lsm = StraightLineEstimatorLSM(seg_data)
+data = dg.messed_pts_x, dg.messed_pts_y
+lsm = StraightLineEstimatorLSM(data)
 
-est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_min_args(seg_data)
-est_k, est_b = Line.get_k_form(est_A, est_C)
+d_fig, d_ax = dg.plot_data()
 
-st = (seg_data[0][0], est_k * seg_data[0][0] + est_b)
-end = (seg_data[0][-1], est_k * seg_data[0][-1] + est_b)
+# plt.ion()
+
+while lsm.last_end_idx < len(data[0]) - 1:
+    print(lsm.last_end_idx)
+    seg_data = lsm.estimate_segment_edges(tol)
+    print(seg_data)
+
+    est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_min_args(seg_data)
+    est_k, est_b = Line.get_k_form(est_A, est_C)
+
+    st = (seg_data[0][0], est_k * seg_data[0][0] + est_b)
+    end = (seg_data[0][-1], est_k * seg_data[0][-1] + est_b)
+
+    StraightLineEstimatorLSM.plot_est_line(st, end, d_fig, d_ax)
+
+
+# est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_min_args(seg_data)
+# est_k, est_b = Line.get_k_form(est_A, est_C)
+#
+# st = (seg_data[0][0], est_k * seg_data[0][0] + est_b)
+# end = (seg_data[0][-1], est_k * seg_data[0][-1] + est_b)
 
 # start_pt, end_pt = lsm.get_init_estimation()
 # ln = Line(start_pt, end_pt)
@@ -97,15 +150,16 @@ end = (seg_data[0][-1], est_k * seg_data[0][-1] + est_b)
 # lf_val = LeastSquares.calc_loss_func(data, ln.A, ln.C)
 # print(lf_val)
 #
-idl_k = tg.segments[0].k
-idl_b = tg.segments[0].b
+# idl_k = tg.segments[0].k
+# idl_b = tg.segments[0].b
 
-print(idl_k, idl_b)
-print(est_k, est_b)
+# print(idl_k, idl_b)
+# print(est_k, est_b)
 
 
-t_fig, t_ax = tg.plot_traj()
-d_fig, d_ax = dg.plot_data()
-StraightLineEstimatorLSM.plot_est_line(st, end, d_fig, d_ax)
-StraightLineEstimatorLSM.plot_est_line(st, end, t_fig, t_ax)
+# t_fig, t_ax = tg.plot_traj()
+# t_ax.plot(seg_data[0], seg_data[1], '.', markersize=5, color='0.6')
+# d_fig, d_ax = dg.plot_data()
+# StraightLineEstimatorLSM.plot_est_line(st, end, d_fig, d_ax)
+# StraightLineEstimatorLSM.plot_est_line(st, end, t_fig, t_ax)
 plt.show()
