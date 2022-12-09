@@ -19,9 +19,30 @@ class Line:
         b = -C/B
         return k, b
 
-    # # Статический метод нахождения координат точки пересечения двух прямых
-    # @staticmethod
-    # def find_interection(A1, C1, A2, C2):
+    # Статический метод нахождения координат точки пересечения двух прямых, заданных в общем виде
+    @staticmethod
+    def calc_intersection(A1, C1, A2, C2):
+        # if not A1 == A2:
+        #     # По сути решение системы линейных уравнений с двумя неизвестными матричным методом
+        #     x = (C1 + A2 * C2) / (A2 - A1)
+        #     y = (-C1 - A1 * C2) / (A2 - A1)
+        # else:
+        #     raise ValueError("ERROR: SEGMENTS ARE PARALLEL")
+
+        # А это решение подстановкой, и это работает
+        x = (C2 - C1) / (A1 - A2)
+        y = A2 * (C2 - C1) / (A1 - A2) + C2
+
+        return x, y
+
+    # Вычисление параметров нормали из точки pt в общем виде (А, С) к заданной в общем виде прямой
+    @staticmethod
+    def calc_normal(pt, A1, C1):
+        x0, y0 = pt
+        A2 = -1/A1
+        C2 = x0/A1 + y0
+
+        return A2, C2
 
     # Конструктор класса - объявление прямой по 2 точкам
     def __init__(self, pt1, pt2):
@@ -60,11 +81,8 @@ class Line:
     # Метод расчёта расстояния от точки до прямой (как раз для этого и нужна общая форма уравнения прямой)
     def calc_pt_dist(self, pt):
         xp, yp = pt
-        # if self.is_x_dependent:
-        #     distance = abs(xp*self.A + yp*self.B + self.C)/sqrt(self.A ** 2 + self.B ** 2)
-        # else:
-        #     distance = abs(xp - self.C)
         distance = abs(xp * self.A + yp * self.B + self.C) / sqrt(self.A ** 2 + self.B ** 2)
+
         return distance
 
     # Метод, возвращающий значение y по значению x
@@ -90,10 +108,3 @@ class Line:
         pts_y.append(self.y2)
 
         return pts_x, pts_y, pts_num + 1  # плюс закреплённая конечная точка
-
-
-# ln = Line((1, 0), (1, 1))
-# print(ln.k, ln.b, ln.A, ln.B, ln.C)
-# print(ln.pt_dist((3,1)))
-# ln = Line((0, 0), (1, 1))
-# print(ln.k, ln.b, ln.A, ln.B, ln.C)
