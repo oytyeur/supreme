@@ -37,7 +37,7 @@ class StraightLineEstimatorLSM:
 
     # Вычисление аргументов (A, C) для минимума функции потерь
     @staticmethod
-    def calc_loss_func_min_args(segment_data):
+    def calc_loss_func_argmin(segment_data):
         data_x, data_y = segment_data
         pts_num = len(data_x)
         x_sum, y_sum, xy_sum, x_sq_sum, y_sq_sum = StraightLineEstimatorLSM.calc_sums(segment_data)
@@ -61,19 +61,29 @@ class StraightLineEstimatorLSM:
 
     # Визуализация оценки траектории поверх данных: красная точка - начало, синяя - конец
     @staticmethod
-    def plot_est_line(pt1, pt2, fig, ax):
-        ax.plot([pt1[0], pt2[0]], [pt1[1], pt2[1]])
-        ax.plot(pt1[0], pt1[1], 'r.')
-        ax.plot(pt2[0], pt2[1], 'b.')
+    def plot_est_line(corners, fig, ax):
+        # ax.plot([pt1[0], pt2[0]], [pt1[1], pt2[1]])
+        start_pt = corners[0]
+        end_pt = corners[-1]
+        for i in range(len(corners) - 1):
+            x1 = corners[i][0]
+            y1 = corners[i][1]
+            x2 = corners[i+1][0]
+            y2 = corners[i+1][1]
+            ax.plot([x1, x2], [y1, y2])
+
+        ax.plot(start_pt[0], start_pt[1], 'r.')
+        ax.plot(end_pt[0], end_pt[1], 'b.')
         fig.show()
 
     def __init__(self, data):
         self.data_x, self.data_y = data
         self.last_end_idx = 0  # последний найденный конец отрезка
+        self.est_segments_params_gen = []  # параметры оценок отрезков траектории в общей форме (A, C)
 
     # Оценка концов отрезка (среза данных для построения текущего отрезка),
     # чтобы использовать для оценки только потенциально принадлежащие текущему отрезку точки
-    def estimate_segment_edges(self, tolerance):
+    def calc_segment_data_edges(self, tolerance):
         # Срезы непроверенных данных
         rest_data_x = self.data_x[self.last_end_idx:]
         rest_data_y = self.data_y[self.last_end_idx:]
@@ -86,7 +96,6 @@ class StraightLineEstimatorLSM:
             segment_data_x.extend(rest_data_x[:2])  # первая пара принимается принадщлежной отрезку (чтобы больше одной)
             segment_data_y.extend(rest_data_y[:2])
             for i in range(rest_pts_num - 2):
-                print(i)
                 # По двум соседним точкам строим прямую
                 line = Line((rest_data_x[i], rest_data_y[i]), (rest_data_x[i+1], rest_data_y[i+1]))
                 # Определяем расстояние до этой прямой от следующей после пары точки
@@ -94,14 +103,11 @@ class StraightLineEstimatorLSM:
                 if dist <= tolerance:  # если меньше порога, относим к текущему отрезку
                     segment_data_x.append(rest_data_x[i+2])
                     segment_data_y.append(rest_data_y[i+2])
-                    print("accepted", self.last_end_idx)
                     if i == rest_pts_num - 3:
                         self.last_end_idx += rest_pts_num
                 else:  # иначе не относим определяем найденный конец отрезка, заканчиваем поиск
                     self.last_end_idx += i + 1
-                    print("denied", self.last_end_idx)
                     break
-
         # Если точек меньше трёх, то весть остаток принимается отрезком
         else:
             segment_data_x.extend(rest_data_x)
@@ -110,10 +116,39 @@ class StraightLineEstimatorLSM:
 
         return segment_data_x, segment_data_y
 
+    # Вычисление координат изломов траектории, а также начала и конца
+    def calc_traj_corners(self):
+        corners = []
+        start_pt = (self.data_x[0], self.data_y[0])  # первая точка в данных
+        end_pt = (self.data_x[-1], self.data_y[-1])  # последняя точка в данных
+        # Параметры первого отрезка
+        A1 = self.est_segments_params_gen[0][0]
+        C1 = self.est_segments_params_gen[0][1]
+        A2, C2 = Line.calc_normal(start_pt, A1, C1)  # вычисление перпендикуляра из первой точки к первому отрезку
+        x, y = Line.calc_intersection(A1, C1, A2, C2)  # вычисление координат точки пересечения нормали и отрезка
+        corners.append((x, y))  # добавление стартовой точки траектории
+        # Вычисление углов пересечения отрезков
+        for i in range(len(self.est_segments_params_gen) - 1):
+            A1 = self.est_segments_params_gen[i][0]
+            C1 = self.est_segments_params_gen[i][1]
+            A2 = self.est_segments_params_gen[i+1][0]
+            C2 = self.est_segments_params_gen[i+1][1]
+            x, y = Line.calc_intersection(A1, C1, A2, C2)
+            corners.append((x, y))
+
+        # Параметры последнего отрезка
+        A1 = self.est_segments_params_gen[-1][0]
+        C1 = self.est_segments_params_gen[-1][1]
+        A2, C2 = Line.calc_normal(end_pt, A1, C1)  # вычисление перпендикуляра из последней точки к последнему отрезку
+        x, y = Line.calc_intersection(A1, C1, A2, C2)  # вычисление координат точки пересечения нормали и отрезка
+        corners.append((x, y))  # добавление стартовой точки траектории
+
+        return corners
+
 
 ln_seg = 0.1
-mess = 0.25
-tol = 0.05
+mess = 0.1
+tol = 0.02
 
 tg = TrajectoryGenerator(ln_seg)
 dg = DataGenerator(tg, mess)
@@ -126,16 +161,21 @@ d_fig, d_ax = dg.plot_data()
 
 while lsm.last_end_idx < len(data[0]) - 1:
     print(lsm.last_end_idx)
-    seg_data = lsm.estimate_segment_edges(tol)
+    seg_data = lsm.calc_segment_data_edges(tol)
     print(seg_data)
 
-    est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_min_args(seg_data)
+    est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_argmin(seg_data)
+    lsm.est_segments_params_gen.append((est_A, est_C))
+
     est_k, est_b = Line.get_k_form(est_A, est_C)
 
-    st = (seg_data[0][0], est_k * seg_data[0][0] + est_b)
-    end = (seg_data[0][-1], est_k * seg_data[0][-1] + est_b)
+    # st = (seg_data[0][0], est_k * seg_data[0][0] + est_b)
+    # end = (seg_data[0][-1], est_k * seg_data[0][-1] + est_b)
+    # data_st_pt = (data[0][0], data[1][0])
+    # data_end_pt = (data[0][-1], data[1][-1])
 
-    StraightLineEstimatorLSM.plot_est_line(st, end, d_fig, d_ax)
+traj_corners = lsm.calc_traj_corners()
+StraightLineEstimatorLSM.plot_est_line(traj_corners, d_fig, d_ax)
 
 
 # est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_min_args(seg_data)
