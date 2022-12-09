@@ -13,8 +13,7 @@ class TrajectoryGenerator:
         self.start_y = None
         self.get_rand_start_pt()  # получение случайной стартовой точка
         # Параметры ломаной траектории
-        # self.seg_num = randint(4, 6)  # число сегментов траектории ##############################################################
-        self.seg_num = 1
+        self.seg_num = randint(4, 6)  # число сегментов траектории
         self.segments = []  # непосредственно сегменты
         # Создание ломаной траектории
         self.create_traj()
@@ -28,13 +27,12 @@ class TrajectoryGenerator:
     # Метод для продолжения ломаной траектории отрезком, следующим из предыдущей конечной точки
     def prolong_traj(self, start_pt):
         st_x, st_y = start_pt  # координаты начальной точки данного отрезка (конечной - предыдущего)
-        # length = uniform(0.5, 1.5) ###########################################################################################
-        length = 1
+        length = uniform(0.5, 1.5)
         if not self.segments:  # если пустой список отрезков траектории, в любую сторону направляем первый
             angle = uniform(-pi, pi)
             end_x = st_x + length * cos(angle)
             end_y = st_y + length * sin(angle)
-        else:  # если не пустой, поворачиваем отн. направления предыдущего на случайную величину из [-pi/2; pi/2]
+        else:  # если не пустой, поворачиваем отн. направления предыдущего на случайный угол из [-pi/2; pi/2]
             angle = uniform(-pi/2.0, pi/2.0)
             end_x = st_x + length * cos(self.segments[-1].alpha + angle)
             end_y = st_y + length * sin(self.segments[-1].alpha + angle)
@@ -57,6 +55,6 @@ class TrajectoryGenerator:
             ax.plot(pts_x, pts_y, '.', markersize=3, color='0.2')  # отображение опорных точек (истинных)
         ax.plot(self.start_x, self.start_y, 'r.')
         ax.grid()
-        # ax.axis('scaled')
+        ax.axis('scaled')
         fig.show()
         return fig, ax
