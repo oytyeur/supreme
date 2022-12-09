@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from math import sqrt, sin, cos
 from random import normalvariate
 from trajectoryGenerator import TrajectoryGenerator
+from line import Line
 
 
 class DataGenerator:
@@ -14,19 +15,22 @@ class DataGenerator:
     def mess_up(self):
         messed_pts_x = []
         messed_pts_y = []
+        A = self.traj_gen.segments[0].A
+        C = self.traj_gen.segments[0].C
         for seg in self.traj_gen.segments:
             pts_x, pts_y, pts_num = seg.get_dotty(self.traj_gen.ln_seg)  # разбиений отрезка (дискретизация)
             for pt in range(pts_num):
                 x_offset = 0  # смещение по оси х
                 y_offset = 0  # смещение по оси у
-                course_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg/3)  # смещение по курсу
-                side_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg/3)  # смещение по борту
+                course_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg / 3)  # смещение по курсу
+                side_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg / 3)  # смещение по борту
                 # Переход от системы координат объекта, к системе координат мира
                 x_offset += course_offset * cos(seg.alpha) - side_offset * sin(seg.alpha)
                 y_offset += course_offset * sin(seg.alpha) + side_offset * cos(seg.alpha)
                 messed_pts_x.append(pts_x[pt] + x_offset)
                 messed_pts_y.append(pts_y[pt] + y_offset)
-
+            #     print(Line.calc_pt_dist_gen((messed_pts_x[-1], messed_pts_y[-1]), A, C))
+            # print()
         return messed_pts_x, messed_pts_y
 
     # Визуализация зашумлённых данных
