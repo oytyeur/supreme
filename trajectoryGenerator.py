@@ -55,6 +55,6 @@ class TrajectoryGenerator:
             ax.plot(pts_x, pts_y, '.', markersize=3, color='0.2')  # отображение опорных точек (истинных)
         ax.plot(self.start_x, self.start_y, 'r.')
         ax.grid()
-        ax.axis('scaled')
+        # ax.axis('scaled')
         fig.show()
         return fig, ax

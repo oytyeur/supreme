@@ -22,7 +22,7 @@ class DataGenerator:
             for pt in range(pts_num):
                 x_offset = 0  # смещение по оси х
                 y_offset = 0  # смещение по оси у
-                course_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg / 3)  # смещение по курсу
+                course_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg / 15)  # смещение по курсу
                 side_offset = normalvariate(0.0, self.mess * self.traj_gen.ln_seg / 3)  # смещение по борту
                 # Переход от системы координат объекта, к системе координат мира
                 x_offset += course_offset * cos(seg.alpha) - side_offset * sin(seg.alpha)
@@ -33,12 +33,12 @@ class DataGenerator:
             # print()
         return messed_pts_x, messed_pts_y
 
-    # Визуализация зашумлённых данных
-    def plot_data(self):
-        fig, ax = plt.subplots()
-        ax.plot(self.messed_pts_x, self.messed_pts_y, '.', markersize=5, color='0.6')
-        # ax.axis('scaled')
-        fig.show()
-        return fig, ax
-
+    # # Визуализация зашумлённых данных
+    # def plot_data(self, ax):
+    #     # fig, ax = plt.subplots()
+    #     ax.plot(self.messed_pts_x, self.messed_pts_y, '.', markersize=5, color='0.6')
+    #     # ax.axis('scaled')
+    #     # fig.show()
+    #     plt.draw()
+    #     # return fig, ax
 

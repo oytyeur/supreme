@@ -59,25 +59,27 @@ class StraightLineEstimatorLSM:
         else:
             return A2, C2
 
-    # Визуализация оценки траектории поверх данных: красная точка - начало, синяя - конец
-    @staticmethod
-    def plot_est_line(corners, fig, ax):
-        # ax.plot([pt1[0], pt2[0]], [pt1[1], pt2[1]])
-        start_pt = corners[0]
-        end_pt = corners[-1]
-        for i in range(len(corners) - 1):
-            x1 = corners[i][0]
-            y1 = corners[i][1]
-            x2 = corners[i+1][0]
-            y2 = corners[i+1][1]
-            ax.plot([x1, x2], [y1, y2])
+    # # Визуализация оценки траектории поверх данных: красная точка - начало, синяя - конец
+    # @staticmethod
+    # def plot_est_line(corners, fig, ax):
+    #     # ax.plot([pt1[0], pt2[0]], [pt1[1], pt2[1]])
+    #     start_pt = corners[0]
+    #     end_pt = corners[-1]
+    #     for i in range(len(corners) - 1):
+    #         x1 = corners[i][0]
+    #         y1 = corners[i][1]
+    #         x2 = corners[i+1][0]
+    #         y2 = corners[i+1][1]
+    #         ax.plot([x1, x2], [y1, y2])
+    #
+    #     ax.plot(start_pt[0], start_pt[1], 'r.')
+    #     ax.plot(end_pt[0], end_pt[1], 'b.')
+    #     fig.show()
 
-        ax.plot(start_pt[0], start_pt[1], 'r.')
-        ax.plot(end_pt[0], end_pt[1], 'b.')
-        fig.show()
-
-    def __init__(self, data):
-        self.data_x, self.data_y = data
+    def __init__(self, data_genetator):
+        self.data_x = data_genetator.messed_pts_x
+        self.data_y = data_genetator.messed_pts_y
+        self.data_length = len(self.data_x)
         self.last_end_idx = 0  # последний найденный конец отрезка
         self.est_segments_params_gen = []  # параметры оценок отрезков траектории в общей форме (A, C)
 
@@ -145,61 +147,10 @@ class StraightLineEstimatorLSM:
 
         return corners
 
+    def estimate_traj(self, tolerance):
+        while self.last_end_idx < self.data_length - 1:
+            seg_data = self.calc_segment_data_edges(tolerance)
+            est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_argmin(seg_data)
+            self.est_segments_params_gen.append((est_A, est_C))
 
-ln_seg = 0.1
-mess = 0.1
-tol = 0.02
-
-tg = TrajectoryGenerator(ln_seg)
-dg = DataGenerator(tg, mess)
-data = dg.messed_pts_x, dg.messed_pts_y
-lsm = StraightLineEstimatorLSM(data)
-
-d_fig, d_ax = dg.plot_data()
-
-# plt.ion()
-
-while lsm.last_end_idx < len(data[0]) - 1:
-    print(lsm.last_end_idx)
-    seg_data = lsm.calc_segment_data_edges(tol)
-    print(seg_data)
-
-    est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_argmin(seg_data)
-    lsm.est_segments_params_gen.append((est_A, est_C))
-
-    est_k, est_b = Line.get_k_form(est_A, est_C)
-
-    # st = (seg_data[0][0], est_k * seg_data[0][0] + est_b)
-    # end = (seg_data[0][-1], est_k * seg_data[0][-1] + est_b)
-    # data_st_pt = (data[0][0], data[1][0])
-    # data_end_pt = (data[0][-1], data[1][-1])
-
-traj_corners = lsm.calc_traj_corners()
-StraightLineEstimatorLSM.plot_est_line(traj_corners, d_fig, d_ax)
-
-
-# est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_min_args(seg_data)
-# est_k, est_b = Line.get_k_form(est_A, est_C)
-#
-# st = (seg_data[0][0], est_k * seg_data[0][0] + est_b)
-# end = (seg_data[0][-1], est_k * seg_data[0][-1] + est_b)
-
-# start_pt, end_pt = lsm.get_init_estimation()
-# ln = Line(start_pt, end_pt)
-# est_k, est_b = Line.get_k_form(ln.A, ln.C)
-# lf_val = LeastSquares.calc_loss_func(data, ln.A, ln.C)
-# print(lf_val)
-#
-# idl_k = tg.segments[0].k
-# idl_b = tg.segments[0].b
-
-# print(idl_k, idl_b)
-# print(est_k, est_b)
-
-
-# t_fig, t_ax = tg.plot_traj()
-# t_ax.plot(seg_data[0], seg_data[1], '.', markersize=5, color='0.6')
-# d_fig, d_ax = dg.plot_data()
-# StraightLineEstimatorLSM.plot_est_line(st, end, d_fig, d_ax)
-# StraightLineEstimatorLSM.plot_est_line(st, end, t_fig, t_ax)
-plt.show()
+            # est_k, est_b = Line.get_k_form(est_A, est_C)
