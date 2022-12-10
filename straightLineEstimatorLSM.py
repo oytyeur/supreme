@@ -85,38 +85,74 @@ class StraightLineEstimatorLSM:
 
     # Оценка концов отрезка (среза данных для построения текущего отрезка),
     # чтобы использовать для оценки только потенциально принадлежащие текущему отрезку точки
-    def calc_segment_data_edges(self, tolerance):
-        # Срезы непроверенных данных
-        rest_data_x = self.data_x[self.last_end_idx:]
-        rest_data_y = self.data_y[self.last_end_idx:]
-        # Объявление выходных наборов координат
-        segment_data_x = []
-        segment_data_y = []
-        rest_pts_num = len(rest_data_x)  # число оставшихся точек
-        # Если точек больше двух, строим прямую, оцениваем расстояние до третьей, сравниваем с tolerance
-        if rest_pts_num > 2:
-            segment_data_x.extend(rest_data_x[:2])  # первая пара принимается принадщлежной отрезку (чтобы больше одной)
-            segment_data_y.extend(rest_data_y[:2])
-            for i in range(rest_pts_num - 2):
-                # По двум соседним точкам строим прямую
-                line = Line((rest_data_x[i], rest_data_y[i]), (rest_data_x[i+1], rest_data_y[i+1]))
-                # Определяем расстояние до этой прямой от следующей после пары точки
-                dist = Line.calc_pt_dist_gen((rest_data_x[i+2], rest_data_y[i+2]), line.A, line.C)
-                if dist <= tolerance:  # если меньше порога, относим к текущему отрезку
-                    segment_data_x.append(rest_data_x[i+2])
-                    segment_data_y.append(rest_data_y[i+2])
-                    if i == rest_pts_num - 3:
-                        self.last_end_idx += rest_pts_num
-                else:  # иначе не относим определяем найденный конец отрезка, заканчиваем поиск
-                    self.last_end_idx += i + 1
-                    break
-        # Если точек меньше трёх, то весть остаток принимается отрезком
-        else:
-            segment_data_x.extend(rest_data_x)
-            segment_data_y.extend(rest_data_y)
-            self.last_end_idx += rest_pts_num
+    # def calc_segment_data_edges(self, tolerance):
+    #     # Срезы непроверенных данных
+    #     rest_data_x = self.data_x[self.last_end_idx:]
+    #     rest_data_y = self.data_y[self.last_end_idx:]
+    #     # Объявление выходных наборов координат
+    #     segment_data_x = []
+    #     segment_data_y = []
+    #     rest_pts_num = len(rest_data_x)  # число оставшихся точек
+    #     # Если точек больше двух, строим прямую, оцениваем расстояние до третьей, сравниваем с tolerance
+    #     if rest_pts_num > 2:
+    #         segment_data_x.extend(rest_data_x[:2])  # первая пара принимается принадщлежной отрезку (чтобы больше одной)
+    #         segment_data_y.extend(rest_data_y[:2])
+    #         for i in range(rest_pts_num - 2):
+    #             # По двум соседним точкам строим прямую
+    #             line = Line((rest_data_x[i], rest_data_y[i]), (rest_data_x[i+1], rest_data_y[i+1]))
+    #             # Определяем расстояние до этой прямой от следующей после пары точки
+    #             dist = Line.calc_pt_dist_gen((rest_data_x[i+2], rest_data_y[i+2]), line.A, line.C)
+    #             if dist <= tolerance:  # если меньше порога, относим к текущему отрезку
+    #                 segment_data_x.append(rest_data_x[i+2])
+    #                 segment_data_y.append(rest_data_y[i+2])
+    #                 if i == rest_pts_num - 3:
+    #                     self.last_end_idx += rest_pts_num
+    #             else:  # иначе не относим определяем найденный конец отрезка, заканчиваем поиск
+    #                 self.last_end_idx += i + 1
+    #                 break
+    #     # Если точек меньше трёх, то весть остаток принимается отрезком
+    #     else:
+    #         segment_data_x.extend(rest_data_x)
+    #         segment_data_y.extend(rest_data_y)
+    #         self.last_end_idx += rest_pts_num
+    #
+    #     return segment_data_x, segment_data_y
 
-        return segment_data_x, segment_data_y
+    # Усовершенствованный критерий - последовательный МНК (не рекурсивный)
+    # Оценка траектории: разбиение на отрезки, вычисление параметров общей формы (А, С) для каждого отрезка траектории
+    def estimate_traj(self, tolerance):
+        while self.last_end_idx < self.data_length:
+            # Срезы непроверенных данных
+            rest_data_x = self.data_x[self.last_end_idx:]
+            rest_data_y = self.data_y[self.last_end_idx:]
+            # Списки координат для текущего среза
+            segment_data_x = []
+            segment_data_y = []
+            rest_pts_num = len(rest_data_x)  # число оставшихся точек
+            # Если точек больше двух, строим прямую, оцениваем расстояние до третьей, сравниваем с tolerance
+            if rest_pts_num > 2:
+                segment_data_x.extend(rest_data_x[:2])  # первая пара принимается принадлежной отрезку
+                segment_data_y.extend(rest_data_y[:2])
+                for i in range(2, rest_pts_num):
+                    # По взятому срезу проводим оценку параметров прямой (А, С)
+                    est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_argmin((segment_data_x, segment_data_y))
+                    # Определяем расстояние до этой прямой от следующей после пары точки
+                    dist = Line.calc_pt_dist_gen((rest_data_x[i], rest_data_y[i]), est_A, est_C)
+                    if dist <= tolerance:  # если меньше порога, относим к текущему отрезку
+                        segment_data_x.append(rest_data_x[i])
+                        segment_data_y.append(rest_data_y[i])
+                        if i == rest_pts_num - 1:
+                            self.last_end_idx += rest_pts_num
+                            self.est_segments_params_gen.append((est_A, est_C))
+                    else:  # иначе не относим, определяем найденный конец отрезка, заканчиваем текущий поиск
+                        self.est_segments_params_gen.append((est_A, est_C))
+                        self.last_end_idx += i - 1
+                        break
+            # Если точек меньше трёх, то весть остаток принимается отрезком
+            else:
+                segment_data_x.extend(rest_data_x)
+                segment_data_y.extend(rest_data_y)
+                self.last_end_idx += rest_pts_num
 
     # Вычисление координат изломов траектории, а также начала и конца
     def calc_traj_corners(self):
@@ -147,10 +183,10 @@ class StraightLineEstimatorLSM:
 
         return corners
 
-    def estimate_traj(self, tolerance):
-        while self.last_end_idx < self.data_length - 1:
-            seg_data = self.calc_segment_data_edges(tolerance)
-            est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_argmin(seg_data)
-            self.est_segments_params_gen.append((est_A, est_C))
-
-            # est_k, est_b = Line.get_k_form(est_A, est_C)
+    # def estimate_traj(self, tolerance):
+    #     while self.last_end_idx < self.data_length - 1:
+    #         seg_data = self.calc_segment_data_edges(tolerance)
+    #         est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_argmin(seg_data)
+    #         self.est_segments_params_gen.append((est_A, est_C))
+    #
+    #         # est_k, est_b = Line.get_k_form(est_A, est_C)
