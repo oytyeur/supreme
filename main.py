@@ -21,6 +21,9 @@ def calc_results(data_gen):
     traj_corners = estimator.calc_traj_corners()
     return traj_corners
 
+def rebuild_data():
+    global data_gen
+
 # Визуализация результатов оценки траектории
 def plot_results(corners):
     start_pt = corners[0]
@@ -41,7 +44,9 @@ def plot_results(corners):
 def estimate_new_traj(event):
     global traj_gen
     global data_gen
+    global ln_seg
     global mess
+    ln_seg = ln_seg_sldr.val
     mess = mess_sldr.val
 
     traj_gen = TrajectoryGenerator(ln_seg)
@@ -53,7 +58,7 @@ def estimate_new_traj(event):
     plot_results(traj_corners)
 
 
-def reestimate(event):
+def reestimate_traj(event):
     global tol
     tol = tol_sldr.val
 
@@ -72,22 +77,23 @@ if __name__ == '__main__':
     fig, ax = plt.subplots()
     fig.subplots_adjust(right=0.8, bottom=0.3)
 
-    # estimate_new_traj(None)
-
-    next_btn_ax = plt.axes([0.85, 0.4, 0.1, 0.05])
+    # Кнопка Next генерации нового датасета при текущих параметрах
+    next_btn_ax = plt.axes([0.85, 0.5, 0.1, 0.05])
     next_btn = Button(next_btn_ax, 'Next')
     next_btn.on_clicked(estimate_new_traj)
 
-    tol_sldr_ax = plt.axes([0.15, 0.1, 0.75, 0.05])
+    # Слайдер Tolerance для изменения параметра допустимости tolerance
+    tol_sldr_ax = plt.axes([0.15, 0.15, 0.75, 0.05])
     tol_sldr = Slider(tol_sldr_ax,
                       label='Tolerance',
-                      valmin=0.0,
+                      valmin=0.001,
                       valmax=1.0,
                       valinit=tol,
-                      valstep=0.005)
-    tol_sldr.on_changed(reestimate)
+                      valstep=0.001)
+    tol_sldr.on_changed(reestimate_traj)
 
-    mess_sldr_ax = plt.axes([0.15, 0.05, 0.75, 0.05])
+    # Слайдер Mess для изменения меры зашумления mess
+    mess_sldr_ax = plt.axes([0.15, 0.1, 0.75, 0.05])
     mess_sldr = Slider(mess_sldr_ax,
                        label='Mess',
                        valmin=0.0,
@@ -95,6 +101,16 @@ if __name__ == '__main__':
                        valinit=mess,
                        valstep=0.01)
     mess_sldr.on_changed(estimate_new_traj)
+
+    # Слайдер Period для изменения периодичности "измерений" ln_seg
+    ln_seg_sldr_ax = plt.axes([0.15, 0.05, 0.75, 0.05])
+    ln_seg_sldr = Slider(ln_seg_sldr_ax,
+                         label='Period',
+                         valmin=0.01,
+                         valmax=0.5,
+                         valinit=ln_seg,
+                         valstep=0.01)
+    ln_seg_sldr.on_changed(estimate_new_traj)
 
     estimate_new_traj(None)
 

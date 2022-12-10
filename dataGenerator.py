@@ -1,8 +1,5 @@
-import matplotlib.pyplot as plt
 from math import sqrt, sin, cos
 from random import normalvariate
-from trajectoryGenerator import TrajectoryGenerator
-from line import Line
 
 
 class DataGenerator:
@@ -29,8 +26,6 @@ class DataGenerator:
                 y_offset += course_offset * sin(seg.alpha) + side_offset * cos(seg.alpha)
                 messed_pts_x.append(pts_x[pt] + x_offset)
                 messed_pts_y.append(pts_y[pt] + y_offset)
-            #     print(Line.calc_pt_dist_gen((messed_pts_x[-1], messed_pts_y[-1]), A, C))
-            # print()
         return messed_pts_x, messed_pts_y
 
     # # Визуализация зашумлённых данных

@@ -1,8 +1,5 @@
-import matplotlib.pyplot as plt
 from math import sqrt
 from line import Line
-from trajectoryGenerator import TrajectoryGenerator
-from dataGenerator import DataGenerator
 
 
 class StraightLineEstimatorLSM:
@@ -136,19 +133,19 @@ class StraightLineEstimatorLSM:
                 for i in range(2, rest_pts_num):
                     # По взятому срезу проводим оценку параметров прямой (А, С)
                     est_A, est_C = StraightLineEstimatorLSM.calc_loss_func_argmin((segment_data_x, segment_data_y))
-                    # Определяем расстояние до этой прямой от следующей после пары точки
+                    # Определяем расстояние до этой прямой от следующей после среза данных точки
                     dist = Line.calc_pt_dist_gen((rest_data_x[i], rest_data_y[i]), est_A, est_C)
                     if dist <= tolerance:  # если меньше порога, относим к текущему отрезку
                         segment_data_x.append(rest_data_x[i])
                         segment_data_y.append(rest_data_y[i])
-                        if i == rest_pts_num - 1:
+                        if i == rest_pts_num - 1:  # если рассмотренная точка была последней
                             self.last_end_idx += rest_pts_num
-                            self.est_segments_params_gen.append((est_A, est_C))
+                            self.est_segments_params_gen.append((est_A, est_C))  # сохраняем оценку параметров прямой
                     else:  # иначе не относим, определяем найденный конец отрезка, заканчиваем текущий поиск
-                        self.est_segments_params_gen.append((est_A, est_C))
+                        self.est_segments_params_gen.append((est_A, est_C))  # сохраняем оценку параметров прямой
                         self.last_end_idx += i - 1
                         break
-            # Если точек меньше трёх, то весть остаток принимается отрезком
+            # Если точек меньше трёх, то весь остаток принимается отрезком
             else:
                 segment_data_x.extend(rest_data_x)
                 segment_data_y.extend(rest_data_y)

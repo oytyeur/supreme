@@ -1,4 +1,3 @@
-import math
 from math import inf, sqrt, atan2, sin, cos
 
 
@@ -29,7 +28,7 @@ class Line:
         # else:
         #     raise ValueError("ERROR: SEGMENTS ARE PARALLEL")
 
-        # А это решение подстановкой, и это работает
+        # А это решение подстановкой, и это хотя бы работает
         x = (C2 - C1) / (A1 - A2)
         y = A2 * (C2 - C1) / (A1 - A2) + C2
 
