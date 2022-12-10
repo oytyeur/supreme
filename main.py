@@ -16,6 +16,7 @@ def plot_data(data_gen):
 # Оценка траектории
 def calc_results(data_gen):
     estimator = StraightLineEstimatorLSM(data_gen)
+    # estimator.estimate_traj(tol)
     estimator.estimate_traj(tol)
     traj_corners = estimator.calc_traj_corners()
     return traj_corners
@@ -40,6 +41,9 @@ def plot_results(corners):
 def estimate_new_traj(event):
     global traj_gen
     global data_gen
+    global mess
+    mess = mess_sldr.val
+
     traj_gen = TrajectoryGenerator(ln_seg)
     data_gen = DataGenerator(traj_gen, mess)
     traj_corners = calc_results(data_gen)
@@ -62,13 +66,13 @@ def reestimate(event):
 
 if __name__ == '__main__':
     ln_seg = 0.1  # периодичность "съёма измерений"
-    mess = 0.25  # мера зашумлённости
-    tol = 0.05  # допустимый порог вхождения точки в пределы отрезка
+    mess = 0.5  # мера зашумлённости
+    tol = 0.1  # допустимый порог вхождения точки в пределы отрезка
 
     fig, ax = plt.subplots()
     fig.subplots_adjust(right=0.8, bottom=0.3)
 
-    estimate_new_traj(None)
+    # estimate_new_traj(None)
 
     next_btn_ax = plt.axes([0.85, 0.4, 0.1, 0.05])
     next_btn = Button(next_btn_ax, 'Next')
@@ -78,9 +82,20 @@ if __name__ == '__main__':
     tol_sldr = Slider(tol_sldr_ax,
                       label='Tolerance',
                       valmin=0.0,
-                      valmax=0.25,
+                      valmax=1.0,
                       valinit=tol,
-                      valstep=0.001)
+                      valstep=0.005)
     tol_sldr.on_changed(reestimate)
+
+    mess_sldr_ax = plt.axes([0.15, 0.05, 0.75, 0.05])
+    mess_sldr = Slider(mess_sldr_ax,
+                       label='Mess',
+                       valmin=0.0,
+                       valmax=5.0,
+                       valinit=mess,
+                       valstep=0.01)
+    mess_sldr.on_changed(estimate_new_traj)
+
+    estimate_new_traj(None)
 
     plt.show()
