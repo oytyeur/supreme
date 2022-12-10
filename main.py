@@ -105,7 +105,7 @@ if __name__ == '__main__':
     # Слайдер Period для изменения периодичности "измерений" ln_seg
     ln_seg_sldr_ax = plt.axes([0.15, 0.05, 0.75, 0.05])
     ln_seg_sldr = Slider(ln_seg_sldr_ax,
-                         label='Frequency',
+                         label='Period',
                          valmin=0.01,
                          valmax=0.5,
                          valinit=ln_seg,
