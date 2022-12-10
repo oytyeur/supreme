@@ -5,16 +5,10 @@ from straightLineEstimatorLSM import StraightLineEstimatorLSM
 from matplotlib.widgets import Button, Slider
 
 
-global ln_seg
-global mess
-global tol
-
-global fig
-global ax
-
-
-def plot_data(data_generator):
-    ax.plot(data_generator.messed_pts_x, data_generator.messed_pts_y, '.', markersize=5, color='0.6')
+def plot_data(data_gen):
+    ax.plot(data_gen.messed_pts_x, data_gen.messed_pts_y, '.', markersize=5, color='0.6')
+    # plt.xlim([-5, 5])
+    # plt.ylim([-5, 5])
     plt.draw()
 
 
@@ -34,13 +28,30 @@ def plot_results(corners):
 def approximate_new_traj(event):
     ax.clear()
 
-    traj_generator = TrajectoryGenerator(ln_seg)
-    data_generator = DataGenerator(traj_generator, mess)
-    plot_data(data_generator)
+    global traj_gen
+    global data_gen
 
-    lsm = StraightLineEstimatorLSM(data_generator)
-    lsm.estimate_traj(tol)
-    traj_corners = lsm.calc_traj_corners()
+    traj_gen = TrajectoryGenerator(ln_seg)
+    data_gen = DataGenerator(traj_gen, mess)
+
+    plot_data(data_gen)
+    estimator = StraightLineEstimatorLSM(data_gen)
+    estimator.estimate_traj(tol)
+    traj_corners = estimator.calc_traj_corners()
+    plot_results(traj_corners)
+
+
+def reapproximate(event):
+    ax.clear()
+
+    global tol
+    tol = tol_sldr.val
+
+    plot_data(data_gen)
+
+    estimator = StraightLineEstimatorLSM(data_gen)
+    estimator.estimate_traj(tol_sldr.val)
+    traj_corners = estimator.calc_traj_corners()
     plot_results(traj_corners)
 
 
@@ -49,10 +60,6 @@ if __name__ == '__main__':
     mess = 0.2  # мера зашумлённости
     tol = 0.05  # допустимый порог вхождения точки в пределы отрезка
 
-    # tg = TrajectoryGenerator(ln_seg)  # генерация траектории
-
-    # dg = DataGenerator(tg, mess)  # генерация зашумлённых данных
-
     fig, ax = plt.subplots()
     fig.subplots_adjust(right=0.8, bottom=0.3)
 
@@ -60,7 +67,15 @@ if __name__ == '__main__':
 
     next_btn_ax = plt.axes([0.85, 0.4, 0.1, 0.05])
     next_btn = Button(next_btn_ax, 'Next')
-
     next_btn.on_clicked(approximate_new_traj)
+
+    tol_sldr_ax = plt.axes([0.15, 0.1, 0.75, 0.05])
+    tol_sldr = Slider(tol_sldr_ax,
+                      label='Tolerance',
+                      valmin=0.0,
+                      valmax=0.25,
+                      valinit=tol,
+                      valstep=0.001)
+    tol_sldr.on_changed(reapproximate)
 
     plt.show()
