@@ -5,6 +5,7 @@ from straightLineEstimatorLSM import StraightLineEstimatorLSM
 from matplotlib.widgets import Button, Slider
 
 
+# Визуализация данных
 def plot_data(data_gen):
     ax.plot(data_gen.messed_pts_x, data_gen.messed_pts_y, '.', markersize=5, color='0.6')
     # plt.xlim([-5, 5])
@@ -12,6 +13,14 @@ def plot_data(data_gen):
     plt.draw()
 
 
+# Оценка траектории
+def calc_results(data_gen):
+    estimator = StraightLineEstimatorLSM(data_gen)
+    estimator.estimate_traj(tol)
+    traj_corners = estimator.calc_traj_corners()
+    return traj_corners
+
+# Визуализация результатов оценки траектории
 def plot_results(corners):
     start_pt = corners[0]
     end_pt = corners[-1]
@@ -25,49 +34,45 @@ def plot_results(corners):
     ax.plot(end_pt[0], end_pt[1], 'b.')
 
 
-def approximate_new_traj(event):
-    ax.clear()
+# ===== ОБРАБОТЧИКИ СОБЫТИЙ =====
 
+# При нажатии кнопки Next - сгенерировать новый датасет и оценить траекторию
+def estimate_new_traj(event):
     global traj_gen
     global data_gen
-
     traj_gen = TrajectoryGenerator(ln_seg)
     data_gen = DataGenerator(traj_gen, mess)
+    traj_corners = calc_results(data_gen)
 
+    ax.clear()
     plot_data(data_gen)
-    estimator = StraightLineEstimatorLSM(data_gen)
-    estimator.estimate_traj(tol)
-    traj_corners = estimator.calc_traj_corners()
     plot_results(traj_corners)
 
 
-def reapproximate(event):
-    ax.clear()
-
+def reestimate(event):
     global tol
     tol = tol_sldr.val
 
-    plot_data(data_gen)
+    traj_corners = calc_results(data_gen)
 
-    estimator = StraightLineEstimatorLSM(data_gen)
-    estimator.estimate_traj(tol_sldr.val)
-    traj_corners = estimator.calc_traj_corners()
+    ax.clear()
+    plot_data(data_gen)
     plot_results(traj_corners)
 
 
 if __name__ == '__main__':
     ln_seg = 0.1  # периодичность "съёма измерений"
-    mess = 0.2  # мера зашумлённости
+    mess = 0.25  # мера зашумлённости
     tol = 0.05  # допустимый порог вхождения точки в пределы отрезка
 
     fig, ax = plt.subplots()
     fig.subplots_adjust(right=0.8, bottom=0.3)
 
-    approximate_new_traj(None)
+    estimate_new_traj(None)
 
     next_btn_ax = plt.axes([0.85, 0.4, 0.1, 0.05])
     next_btn = Button(next_btn_ax, 'Next')
-    next_btn.on_clicked(approximate_new_traj)
+    next_btn.on_clicked(estimate_new_traj)
 
     tol_sldr_ax = plt.axes([0.15, 0.1, 0.75, 0.05])
     tol_sldr = Slider(tol_sldr_ax,
@@ -76,6 +81,6 @@ if __name__ == '__main__':
                       valmax=0.25,
                       valinit=tol,
                       valstep=0.001)
-    tol_sldr.on_changed(reapproximate)
+    tol_sldr.on_changed(reestimate)
 
     plt.show()
